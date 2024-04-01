@@ -10,14 +10,13 @@ import Card from '@mui/material/Card'
 import axios from 'axios'
 import JsonView from '@uiw/react-json-view'
 import ASTMapper from './ASTMapper'
-import VirtualMachine from './VirtualMachine'
 
 function App() {
   const [currentCode, setCurrentCode] = useState('')
   const [executedCode, setExectuedCode] = useState('')
   const [jsonAST, setJsonAST] = useState('')
 
-  function handleEditorChange(value, event) {
+  function handleEditorChange(value) {
     setCurrentCode(value)
   }
 
@@ -40,8 +39,9 @@ function App() {
   async function run(inputCodes) {
     try {
       const parsed_json_string = await parse(inputCodes)
-      setJsonAST(ASTMapper(parsed_json_string))
-      const result = VirtualMachine(jsonAST)
+      const newJsonAST = ASTMapper(parsed_json_string)
+      setJsonAST(newJsonAST) // Update the state for the next render
+      const result = await sendASTandExecute(newJsonAST) // Use the new AST immediately
       return result
     } catch (error) {
       handleClear()
@@ -79,6 +79,30 @@ function App() {
     }
   }
 
+  async function sendASTandExecute(jsonAST) {
+    try {
+      const response = await fetch('http://localhost:3001/run-vm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: jsonAST }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        console.log(data.reply)
+        return data.reply
+      } else {
+        console.error('Server error:', data.reply)
+        return 'error hereeeeeee'
+      }
+    } catch (error) {
+      console.error('Network error:', error)
+      return 'error herrrrrre'
+    }
+  }
   //frontend ui
   return (
     <div className='App'>
