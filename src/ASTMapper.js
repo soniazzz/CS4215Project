@@ -1,28 +1,19 @@
 function ASTmapper(jsonString) {
   // debugger
   const arr = JSON.parse(jsonString).Decls
-  console.log('arr')
-  console.log(arr)
   const temp = arr.slice(1, arr.length - 1) //extract import and main
-  console.log('temp')
-  console.log(temp)
   const lastNode = JSON.parse(jsonString).Decls[arr.length - 1]
-  console.log('lastNode')
-  console.log(lastNode)
   let mainStmts
   if (lastNode.NodeType === 'FuncDecl' && lastNode.Name.Name === 'main') {
     mainStmts = lastNode.Body.List
   }
   const jsonToBeOrganized = temp.concat(mainStmts)
-  console.log('jsonToBeOrganized')
-  console.log(jsonToBeOrganized)
+
   function mapNode(node) {
     if (!node) return null
     // debugger
     switch (node.NodeType) {
       case 'FuncDecl':
-        console.log(node.Name.Name)
-        console.log(node)
         return {
           tag: 'fun',
           sym: node.Name.Name,
@@ -56,11 +47,12 @@ function ASTmapper(jsonString) {
           scnd: mapNode(node.Y),
         }
       case 'Ident':
-        if (node.Name === 'true') {
-          return { tag: 'lit', sym: true }
+        //special parse error for boolean
+        if (node.Name === 'true') { 
+          return { tag: 'lit', val: true }
         }
         if (node.Name === 'false') {
-          return { tag: 'lit', sym: false }
+          return { tag: 'lit', val: false }
         }
         return { tag: 'nam', sym: node.Name }
       case 'BasicLit':
@@ -179,7 +171,6 @@ function ASTmapper(jsonString) {
       stmts: jsonToBeOrganized.map(mapNode),
     },
   }
-  console.log(organized)
   return JSON.stringify(organized)
 }
 export default ASTmapper

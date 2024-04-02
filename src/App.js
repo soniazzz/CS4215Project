@@ -41,7 +41,13 @@ function App() {
       const parsed_json_string = await parse(inputCodes)
       const newJsonAST = ASTMapper(parsed_json_string)
       setJsonAST(newJsonAST) // Update the state for the next render
-      const result = await sendASTandExecute(newJsonAST) // Use the new AST immediately
+      
+      //Cut connection to backend VM until VM is finished
+      // const result = await sendASTandExecute(newJsonAST) // Use the new AST immediately
+
+      //Fake
+      const result = newJsonAST
+      
       return result
     } catch (error) {
       handleClear()
@@ -78,7 +84,7 @@ function App() {
       return JSON.parse(jsonString)
     }
   }
-
+  //Actual Connection to backend VM, currently cut until VM is finished
   async function sendASTandExecute(jsonAST) {
     try {
       const response = await fetch('http://localhost:3001/run-vm', {
