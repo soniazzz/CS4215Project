@@ -48,7 +48,7 @@ function ASTmapper(jsonString) {
         }
       case 'Ident':
         //special parse error for boolean
-        if (node.Name === 'true') { 
+        if (node.Name === 'true') {
           return { tag: 'lit', val: true }
         }
         if (node.Name === 'false') {
@@ -58,12 +58,55 @@ function ASTmapper(jsonString) {
       case 'BasicLit':
         return { tag: 'lit', val: JSON.parse(node.Value) }
       case 'IfStmt':
-        return {
-          tag: 'cond',
-          pred: mapNode(node.Cond),
-          cons: mapNode(node.Body),
-          alt: mapNode(node.Else),
+        console.log(node)
+        if (node.Else == null) {
+          return {
+            tag: 'cond',
+            pred: mapNode(node.Cond),
+            cons: {
+              tag: 'seq',
+              stmts: node.Body.List.map(mapNode),
+            },
+          }
+        } else if (node.Else.NodeType == 'BlockStmt') {
+          console.log(node)
+          return {
+            tag: 'cond',
+            pred: mapNode(node.Cond),
+            cons: {
+              tag: 'seq',
+              stmts: node.Body.List.map(mapNode),
+            },
+            alt: {
+              tag: 'seq',
+              stmts: node.Else.List.map(mapNode),
+            },
+          }
+        } else if (node.Else.NodeType == 'IfStmt') {
+          return {
+            tag: 'cond',
+            pred: mapNode(node.Cond),
+            cons: {
+              tag: 'seq',
+              stmts: node.Body.List.map(mapNode),
+            },
+            alt: mapNode(node.Else),
+          }
         }
+      // return {
+      //   tag: 'cond',
+      //   pred: mapNode(node.Cond),
+      //   // cons: mapNode(node.Body),
+      //   // alt: mapNode(node.Else),
+      //   cons: {
+      //     tag: 'seq',
+      //     stmts: node.Body.List.map(mapNode),
+      //   },
+      //   alt: {
+      //     tag: 'seq',
+      //     stmts: node.Else.List.map(mapNode),
+      //   },
+      // }
       case 'ForStmt':
         return {
           tag: 'for',
@@ -73,10 +116,45 @@ function ASTmapper(jsonString) {
 
       case 'AssignStmt':
         if (node.Lhs.length === node.Rhs.length) {
-          return {
-            tag: 'assmt',
-            sym: node.Lhs.map(mapNode),
-            expr: node.Rhs.map(mapNode),
+          switch (node.Tok) {
+            case '=':
+              return {
+                tag: 'assmt',
+                sym: node.Lhs.map(mapNode),
+                expr: node.Rhs.map(mapNode),
+              }
+            case ':=':
+              return {
+                tag: 'assmt',
+                sym: node.Lhs.map(mapNode),
+                expr: node.Rhs.map(mapNode),
+              }
+            case '+=':
+              return {
+                tag: 'assmt',
+                sym: node.Lhs.map(mapNode),
+                expr: [
+                  {
+                    tag: 'binop',
+                    sym: '+',
+                    frst: node.Lhs.map(mapNode)[0],
+                    scnd: node.Rhs.map(mapNode)[0],
+                  },
+                ],
+              }
+            case '-=':
+              return {
+                tag: 'assmt',
+                sym: node.Lhs.map(mapNode),
+                expr: [
+                  {
+                    tag: 'binop',
+                    sym: '-',
+                    frst: node.Lhs.map(mapNode)[0],
+                    scnd: node.Rhs.map(mapNode)[0],
+                  },
+                ],
+              }
           }
         } else {
           alert(
