@@ -10,6 +10,7 @@ function ASTmapper(jsonString) {
   const jsonToBeOrganized = temp.concat(mainStmts)
 
   function mapNode(node) {
+    console.log(node)
     if (!node) return null
     // debugger
     switch (node.NodeType) {
@@ -59,7 +60,7 @@ function ASTmapper(jsonString) {
         return { tag: 'lit', val: JSON.parse(node.Value) }
       case 'IfStmt':
         console.log(node)
-        if (node.Else == null) {
+        if (node.Else == null) {//only if
           return {
             tag: 'cond',
             pred: mapNode(node.Cond),
@@ -68,7 +69,7 @@ function ASTmapper(jsonString) {
               stmts: node.Body.List.map(mapNode),
             },
           }
-        } else if (node.Else.NodeType == 'BlockStmt') {
+        } else if (node.Else.NodeType == 'BlockStmt') {//if else
           console.log(node)
           return {
             tag: 'cond',
@@ -82,7 +83,7 @@ function ASTmapper(jsonString) {
               stmts: node.Else.List.map(mapNode),
             },
           }
-        } else if (node.Else.NodeType == 'IfStmt') {
+        } else if (node.Else.NodeType == 'IfStmt') {//if-else if-else
           return {
             tag: 'cond',
             pred: mapNode(node.Cond),
@@ -93,20 +94,6 @@ function ASTmapper(jsonString) {
             alt: mapNode(node.Else),
           }
         }
-      // return {
-      //   tag: 'cond',
-      //   pred: mapNode(node.Cond),
-      //   // cons: mapNode(node.Body),
-      //   // alt: mapNode(node.Else),
-      //   cons: {
-      //     tag: 'seq',
-      //     stmts: node.Body.List.map(mapNode),
-      //   },
-      //   alt: {
-      //     tag: 'seq',
-      //     stmts: node.Else.List.map(mapNode),
-      //   },
-      // }
       case 'ForStmt':
         return {
           tag: 'for',
@@ -239,6 +226,8 @@ function ASTmapper(jsonString) {
         }
         return null
       // Other node types go here
+      case 'ExprStmt':
+        return mapNode(node.X)
     }
   }
 
