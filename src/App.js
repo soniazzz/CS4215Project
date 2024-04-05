@@ -45,7 +45,7 @@ function App() {
       // Cut connection to backend VM until VM is finished
       const result = await sendASTandExecute(newJsonAST) 
       
-      // Use the new AST immediately
+      // // Use the new AST immediately
       // //Fake
       // const result = newJsonAST
       

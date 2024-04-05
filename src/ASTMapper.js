@@ -1,14 +1,20 @@
 function ASTmapper(jsonString) {
   // debugger
   const arr = JSON.parse(jsonString).Decls
-  const temp = arr.slice(1, arr.length - 1) //extract import and main
+  // const temp = arr.slice(1, arr.length - 1) //extract import and main
+  const temp = arr.slice(0, arr.length - 1)
   const lastNode = JSON.parse(jsonString).Decls[arr.length - 1]
   let mainStmts
   if (lastNode.NodeType === 'FuncDecl' && lastNode.Name.Name === 'main') {
     mainStmts = lastNode.Body.List
   }
   const jsonToBeOrganized = temp.concat(mainStmts)
-
+  console.log('full')
+  console.log(arr)
+  console.log('first')
+  console.log(temp)
+  console.log('last')
+  console.log(lastNode)
   function mapNode(node) {
     console.log(node)
     if (!node) return null
@@ -60,7 +66,8 @@ function ASTmapper(jsonString) {
         return { tag: 'lit', val: JSON.parse(node.Value) }
       case 'IfStmt':
         console.log(node)
-        if (node.Else == null) {//only if
+        if (node.Else == null) {
+          //only if
           return {
             tag: 'cond',
             pred: mapNode(node.Cond),
@@ -69,7 +76,8 @@ function ASTmapper(jsonString) {
               stmts: node.Body.List.map(mapNode),
             },
           }
-        } else if (node.Else.NodeType == 'BlockStmt') {//if else
+        } else if (node.Else.NodeType == 'BlockStmt') {
+          //if else
           console.log(node)
           return {
             tag: 'cond',
@@ -83,7 +91,8 @@ function ASTmapper(jsonString) {
               stmts: node.Else.List.map(mapNode),
             },
           }
-        } else if (node.Else.NodeType == 'IfStmt') {//if-else if-else
+        } else if (node.Else.NodeType == 'IfStmt') {
+          //if-else if-else
           return {
             tag: 'cond',
             pred: mapNode(node.Cond),
@@ -112,7 +121,7 @@ function ASTmapper(jsonString) {
               }
             case ':=':
               return {
-                tag: 'assmt',
+                tag: 'decl',
                 sym: node.Lhs.map(mapNode),
                 expr: node.Rhs.map(mapNode),
               }
@@ -181,7 +190,7 @@ function ASTmapper(jsonString) {
               values.push({ tag: 'lit', val: 0 })
             }
             return {
-              tag: 'assmt',
+              tag: 'decl',
               sym: node.Decl.Specs[0].Names.map(mapNode),
               expr: values,
             }
@@ -191,7 +200,7 @@ function ASTmapper(jsonString) {
               values.push({ tag: 'lit', val: false })
             }
             return {
-              tag: 'assmt',
+              tag: 'decl',
               sym: node.Decl.Specs[0].Names.map(mapNode),
               expr: values,
             }
@@ -201,7 +210,7 @@ function ASTmapper(jsonString) {
               values.push({ tag: 'lit', val: '' })
             }
             return {
-              tag: 'assmt',
+              tag: 'decl',
               sym: node.Decl.Specs[0].Names.map(mapNode),
               expr: values,
             }
@@ -214,7 +223,7 @@ function ASTmapper(jsonString) {
             node.Decl.Specs[0].Names.length === node.Decl.Specs[0].Values.length
           ) {
             return {
-              tag: 'assmt',
+              tag: 'decl',
               sym: node.Decl.Specs[0].Names.map(mapNode),
               expr: node.Decl.Specs[0].Values.map(mapNode),
             }
