@@ -21,10 +21,15 @@ function ASTmapper(jsonString) {
     // debugger
     switch (node.NodeType) {
       case 'FuncDecl':
+        let prms = []
+        for (let i = 0; i < node.Type.Params.List.length; i++) {
+          for (let j=0;j<node.Type.Params.List[i].Names.length;j++)
+          prms.push(node.Type.Params.List[i].Names[j].Name)
+        }
         return {
           tag: 'fun',
           sym: node.Name.Name,
-          prms: node.Type.Params.List[0].Names.map(mapNode),
+          prms: prms,
           body: mapNode(node.Body),
         }
       case 'BlockStmt':
