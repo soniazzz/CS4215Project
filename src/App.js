@@ -42,12 +42,12 @@ function App() {
       const newJsonAST = ASTMapper(parsed_json_string)
       setJsonAST(newJsonAST) // Update the state for the next render
 
-      // Cut connection to backend VM until VM is finished
-      const result = await sendASTandExecute(newJsonAST)
+      // // Cut connection to backend VM until VM is finished
+      // const result = await sendASTandExecute(newJsonAST)
 
       // Use the new AST immediately
       //Fake
-      // const result = newJsonAST
+      const result = newJsonAST
 
       return result
     } catch (error) {

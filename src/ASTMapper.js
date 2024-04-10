@@ -2,29 +2,38 @@ function ASTmapper(jsonString) {
   // debugger
   const arr = JSON.parse(jsonString).Decls
   // const temp = arr.slice(1, arr.length - 1) //extract import and main
-  const temp = arr.slice(0, arr.length - 1)
+  let temp
+  if (arr[0].NodeType == 'GenDecl' && arr[0].Tok == 'import') {
+    temp = arr.slice(1, arr.length - 1)
+  } else {
+    temp = arr.slice(0, arr.length - 1)
+  }
   const lastNode = JSON.parse(jsonString).Decls[arr.length - 1]
   let mainStmts
   if (lastNode.NodeType === 'FuncDecl' && lastNode.Name.Name === 'main') {
     mainStmts = lastNode.Body.List
   }
   const jsonToBeOrganized = temp.concat(mainStmts)
-  console.log('full')
-  console.log(arr)
-  console.log('first')
-  console.log(temp)
-  console.log('last')
-  console.log(lastNode)
+  // console.log('full')
+  // console.log(arr)
+  // console.log('first')
+  // console.log(temp)
+  // console.log('last')
+  // console.log(lastNode)
+  // console.log('jsonTobeOrganized')
+  // console.log(jsonToBeOrganized)
   function mapNode(node) {
-    console.log(node)
+    // console.log("Next Node To Organize")
+    // console.log(node)
     if (!node) return null
     // debugger
     switch (node.NodeType) {
+      //debug
       case 'FuncDecl':
         let prms = []
         for (let i = 0; i < node.Type.Params.List.length; i++) {
-          for (let j=0;j<node.Type.Params.List[i].Names.length;j++)
-          prms.push(node.Type.Params.List[i].Names[j].Name)
+          for (let j = 0; j < node.Type.Params.List[i].Names.length; j++)
+            prms.push(node.Type.Params.List[i].Names[j].Name)
         }
         return {
           tag: 'fun',
@@ -45,7 +54,62 @@ function ASTmapper(jsonString) {
           tag: 'ret',
           expr: mapNode(node.Results[0]),
         }
+      case 'SelectorExpr':
+        if (node.X.Name == 'time') {
+          return {
+            tag: 'time',
+            val: node.Sel.Name,
+          }
+        }
       case 'CallExpr':
+        //debug
+        // console.log(node)
+        if (node.Fun.Name == 'make' && node.Args[0].NodeType === 'ChanType') {
+          console.log('make channel')
+          console.log(node)
+          return null
+        }
+        if (node.Fun.NodeType == 'SelectorExpr' && node.Fun.Sel.Name == 'Add') {
+          console.log('add waitgroup')
+          console.log(node)
+          return {
+            tag: 'addwait',
+            sym: mapNode(node.Fun.X),
+            val: mapNode(node.Args[0]),
+          }
+        }
+        if (
+          node.Fun.NodeType == 'SelectorExpr' &&
+          node.Fun.Sel.Name == 'Wait'
+        ) {
+          console.log('wait')
+          console.log(node)
+          return {
+            tag: 'wait',
+            sym: mapNode(node.Fun.X),
+          }
+        }
+        if (
+          node.Fun.NodeType == 'SelectorExpr' &&
+          node.Fun.Sel.Name == 'Println'
+        ) {
+          return {
+            tag: 'display',
+            content: node.Args.map(mapNode),
+          }
+        }
+        if (
+          node.Fun.NodeType == 'SelectorExpr' &&
+          node.Fun.Sel.Name == 'Sleep'
+        ) {
+          // let params = node.Args.map(mapNode)
+          console.log('sleep')
+          console.log(node)
+          return {
+            tag: 'sleep',
+            time: mapNode(node.Args[0]),
+          }
+        }
         return {
           tag: 'app',
           fun: { tag: 'nam', sym: node.Fun.Name },
@@ -168,6 +232,15 @@ function ASTmapper(jsonString) {
         if (node.Decl.Specs[0].Values === null) {
           //have not declared value
           //check type
+          if (
+            node.Decl.Specs[0].Type.NodeType === 'SelectorExpr' &&
+            node.Decl.Specs[0].Type.Sel.Name === 'WaitGroup'
+          ) {
+            return {
+              tag: 'waitgroupdecl',
+              sym: node.Decl.Specs[0].Names[0].Name,
+            }
+          }
           let t = node.Decl.Specs[0].Type.Name
           const numeric_type = [
             'uint8',
@@ -242,6 +315,78 @@ function ASTmapper(jsonString) {
       // Other node types go here
       case 'ExprStmt':
         return mapNode(node.X)
+      case 'GoStmt':
+        console.log(node)
+        let registered_WaitGroup = null
+        if (
+          node.Call.NodeType == 'CallExpr' &&
+          node.Call.Fun.Body != undefined
+        ) {
+          let prms = []
+          const prmsDecl = node.Call.Fun.Type.Params.List
+          console.log(prmsDecl)
+          if (prmsDecl != null) {
+            for (let i = 0; i < prmsDecl.length; i++) {
+              console.log(prmsDecl[i])
+              for (let j = 0; j < prmsDecl[i].Names.length; j++) {
+                console.log(prmsDecl[i].Names[j])
+                prms.push(prmsDecl[i].Names[j].Name)
+              }
+            }
+          }
+          console.log(node)
+          let declStmt = {
+            tag: 'fun',
+            sym: 'gofun',
+            prms: prms,
+            body: mapNode(node.Call.Fun.Body),
+          }
+          let callStmt = {
+            tag: 'app',
+            fun: { tag: 'nam', sym: 'gofun' },
+            args: node.Call.Args.map(mapNode),
+          }
+          return {
+            tag: 'gostmt',
+            callbody: {
+              tag: 'blk',
+              body: {
+                tag: 'seq',
+                stmts: [declStmt, callStmt],
+              },
+            },
+            // waitgroup:registered_WaitGroup
+          }
+        }
+        // for (let i=0;i<node.Call.Args.length;i++){
+        //   if (node.Call.Args[i].NodeType=='UnaryExpr'){
+        //     registered_WaitGroup = node.Call.Args[i].X.Name
+        //   }
+        // }
+        return {
+          tag: 'gostmt',
+          callbody: {
+            tag: 'blk',
+            body: {
+              tag: 'seq',
+              stmts: [mapNode(node.Call)],
+            },
+          },
+          // waitgroup:registered_WaitGroup
+        }
+      case 'SendStmt':
+        console.log('Send')
+        console.log(node)
+      case 'DeferStmt':
+        console.log('Defer')
+        console.log(node)
+        return { tag: 'deferStmt', sym: node.Call.Fun.X.Name }
+      case 'UnaryExpr':
+        console.log(node)
+        if (node.Op == '&') {
+          console.log('hahah')
+          return mapNode(node.X)
+        }
     }
   }
 
