@@ -20,11 +20,11 @@ function ASTmapper(jsonString) {
   // console.log(temp)
   // console.log('last')
   // console.log(lastNode)
-  // console.log('jsonTobeOrganized')
-  // console.log(jsonToBeOrganized)
+  console.log('jsonTobeOrganized')
+  console.log(jsonToBeOrganized)
   function mapNode(node) {
-    // console.log("Next Node To Organize")
-    // console.log(node)
+    console.log("Next Node To Organize")
+    console.log(node)
     if (!node) return null
     // debugger
     switch (node.NodeType) {
@@ -67,7 +67,13 @@ function ASTmapper(jsonString) {
         if (node.Fun.Name == 'make' && node.Args[0].NodeType === 'ChanType') {
           console.log('make channel')
           console.log(node)
-          return null
+          let buffer=1;
+          if (node.Args.length>1){
+            buffer = node.Args[1].Value
+          }
+          return {
+            tag:'makechannel',
+          }
         }
         if (node.Fun.NodeType == 'SelectorExpr' && node.Fun.Sel.Name == 'Add') {
           console.log('add waitgroup')
@@ -355,14 +361,8 @@ function ASTmapper(jsonString) {
                 stmts: [declStmt, callStmt],
               },
             },
-            // waitgroup:registered_WaitGroup
           }
         }
-        // for (let i=0;i<node.Call.Args.length;i++){
-        //   if (node.Call.Args[i].NodeType=='UnaryExpr'){
-        //     registered_WaitGroup = node.Call.Args[i].X.Name
-        //   }
-        // }
         return {
           tag: 'gostmt',
           callbody: {
@@ -375,17 +375,23 @@ function ASTmapper(jsonString) {
           // waitgroup:registered_WaitGroup
         }
       case 'SendStmt':
-        console.log('Send')
-        console.log(node)
+        return {
+          tag: 'send',
+          chan: node.Chan.Name,
+          val: mapNode(node.Value),
+        }
       case 'DeferStmt':
-        console.log('Defer')
-        console.log(node)
         return { tag: 'deferStmt', sym: node.Call.Fun.X.Name }
       case 'UnaryExpr':
-        console.log(node)
         if (node.Op == '&') {
-          console.log('hahah')
           return mapNode(node.X)
+        }
+        if (node.Op == '<-') {
+          console.log("channel")
+          console.log(node.X)
+          return {
+            tag:'receive',
+            chan:node.X.Name}
         }
     }
   }

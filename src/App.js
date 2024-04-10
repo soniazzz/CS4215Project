@@ -32,7 +32,7 @@ function App() {
         setExectuedCode(result)
       })
       .catch((error) => {
-        setExectuedCode(`Error executing code: ${error}`)
+        alert(`Error executing code: ${error}`)
       })
   }
 
@@ -42,12 +42,11 @@ function App() {
       const newJsonAST = ASTMapper(parsed_json_string)
       setJsonAST(newJsonAST) // Update the state for the next render
 
-      // // Cut connection to backend VM until VM is finished
-      // const result = await sendASTandExecute(newJsonAST)
-
-      // Use the new AST immediately
-      //Fake
-      const result = newJsonAST
+      // Cut connection to backend VM until VM is finished
+      const result = await sendASTandExecute(newJsonAST)
+      // // Use the new AST immediately
+      // //Fake
+      // const result = newJsonAST
 
       return result
     } catch (error) {
@@ -109,6 +108,17 @@ function App() {
       console.error('Network error:', error)
       return 'error herrrrrre'
     }
+  }
+  function formatExecutedCode(executedCode) {
+    if (typeof(executedCode)=='object' ){
+      return executedCode.map((line, index) => (
+        <React.Fragment key={index}>
+          {line.join(' ')}
+          {index < executedCode.length - 1 && <br />}
+        </React.Fragment>
+      ))
+    }
+    return executedCode
   }
   //frontend ui
   return (
@@ -206,7 +216,7 @@ function App() {
                   overflow: 'auto',
                 }}
               >
-                <Typography>{executedCode}</Typography>
+                <Typography>{formatExecutedCode(executedCode)}</Typography>
               </Card>
             </Box>
           </Box>
