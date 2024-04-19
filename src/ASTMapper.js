@@ -1,5 +1,4 @@
 function ASTmapper(jsonString) {
-  // debugger
   const arr = JSON.parse(jsonString).Decls
   // const temp = arr.slice(1, arr.length - 1) //extract import and main
   let temp
@@ -14,21 +13,11 @@ function ASTmapper(jsonString) {
     mainStmts = lastNode.Body.List
   }
   const jsonToBeOrganized = temp.concat(mainStmts)
-  // console.log('full')
-  // console.log(arr)
-  // console.log('first')
-  // console.log(temp)
-  // console.log('last')
-  // console.log(lastNode)
   console.log('jsonTobeOrganized')
   console.log(jsonToBeOrganized)
   function mapNode(node) {
-    console.log("Next Node To Organize")
-    console.log(node)
     if (!node) return null
-    // debugger
     switch (node.NodeType) {
-      //debug
       case 'FuncDecl':
         let prms = []
         for (let i = 0; i < node.Type.Params.List.length; i++) {
@@ -62,17 +51,13 @@ function ASTmapper(jsonString) {
           }
         }
       case 'CallExpr':
-        //debug
-        // console.log(node)
         if (node.Fun.Name == 'make' && node.Args[0].NodeType === 'ChanType') {
-          console.log('make channel')
-          console.log(node)
-          let buffer=1;
-          if (node.Args.length>1){
+          let buffer = 1
+          if (node.Args.length > 1) {
             buffer = node.Args[1].Value
           }
           return {
-            tag:'makechannel',
+            tag: 'makechannel',
           }
         }
         if (node.Fun.NodeType == 'SelectorExpr' && node.Fun.Sel.Name == 'Add') {
@@ -372,7 +357,6 @@ function ASTmapper(jsonString) {
               stmts: [mapNode(node.Call)],
             },
           },
-          // waitgroup:registered_WaitGroup
         }
       case 'SendStmt':
         return {
@@ -387,11 +371,10 @@ function ASTmapper(jsonString) {
           return mapNode(node.X)
         }
         if (node.Op == '<-') {
-          console.log("channel")
-          console.log(node.X)
           return {
-            tag:'receive',
-            chan:node.X.Name}
+            tag: 'receive',
+            chan: node.X.Name,
+          }
         }
     }
   }

@@ -36,8 +36,6 @@ func parseHandler(w http.ResponseWriter, r *http.Request) {
     }
     defer os.Remove(tmpFile.Name()) // Clean up the file afterwards
 
-    // Wrap the code in a minimal valid Go file (input is just statements)
-    // src := fmt.Sprintf("package p; func f() { %s }", req.Code)
     //Input is a complete program
     src := fmt.Sprintf("%s", req.Code)
     if _, err := tmpFile.WriteString(src); err != nil {

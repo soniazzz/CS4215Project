@@ -13,7 +13,7 @@ import ASTMapper from './ASTMapper'
 
 function App() {
   const [currentCode, setCurrentCode] = useState('')
-  const [executedCode, setExectuedCode] = useState('')
+  const [executedCode, setExectuedCode] = useState('Please input and run the code on the left')
   const [jsonAST, setJsonAST] = useState('')
 
   function handleEditorChange(value) {
@@ -22,7 +22,7 @@ function App() {
 
   function handleClear() {
     setCurrentCode('')
-    setExectuedCode('')
+    setExectuedCode('Please input the codes on the left')
     setJsonAST('')
   }
 
@@ -41,13 +41,7 @@ function App() {
       const parsed_json_string = await parse(inputCodes)
       const newJsonAST = ASTMapper(parsed_json_string)
       setJsonAST(newJsonAST) // Update the state for the next render
-
-      // Cut connection to backend VM until VM is finished
       const result = await sendASTandExecute(newJsonAST)
-      // // Use the new AST immediately
-      // //Fake
-      // const result = newJsonAST
-
       return result
     } catch (error) {
       handleClear()
@@ -78,6 +72,7 @@ function App() {
   }
 
   const safeParseJSON = (jsonString) => {
+    console.log(jsonString)
     if (jsonString == '' || jsonString == {}) {
       return ''
     } else {
@@ -102,21 +97,30 @@ function App() {
         return data.reply
       } else {
         console.error('Server error:', data.reply)
-        return 'error hereeeeeee'
+        return 'error'
       }
     } catch (error) {
       console.error('Network error:', error)
-      return 'error herrrrrre'
+      return 'error'
     }
   }
   function formatExecutedCode(executedCode) {
-    if (typeof(executedCode)=='object' ){
+    console.log(executedCode)
+    if (typeof executedCode == 'object') {
+      if (executedCode.length == 0) {
+        return 'Nothing need to be printed out. Consider to use fmt.Println'
+      }
       return executedCode.map((line, index) => (
         <React.Fragment key={index}>
           {line.join(' ')}
           {index < executedCode.length - 1 && <br />}
         </React.Fragment>
       ))
+    }
+    if (executedCode == []) {
+      return 'Nothing need to be printed out. Consider to use fmt.Println'
+    } else {
+      console.log(executedCode)
     }
     return executedCode
   }
